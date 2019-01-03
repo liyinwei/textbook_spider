@@ -21,12 +21,14 @@ class TextbookSpider(Spider):
     allowed_domains = ['newxue.com']
 
     start_urls = list(
-        map(lambda x: 'http://www.newxue.com/yuwen/rjkb%sa' % x, range(1, 10))
+        map(lambda x: 'http://www.newxue.com/yuwen/rjkb%sa' % x, range(1, 7))
     )
 
     start_urls.extend(list(
-        map(lambda x: 'http://www.newxue.com/yuwen/rjkb%sb' % x, range(1, 10))
+        map(lambda x: 'http://www.newxue.com/yuwen/rjkb%sb' % x, range(1, 7))
     ))
+
+    # start_urls = ['http://www.newxue.com/yuwen/rjkb1a']
 
     def parse(self, response):
         """

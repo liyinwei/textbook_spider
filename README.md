@@ -10,11 +10,7 @@
 
 # Run
 
-在项目目录下运行：
-
-```shell
-$ scrapy crawl textbook_spider
-```
+运行`main.py`即可。
 
 运行完成后，数据将保存在项目根目录textbook_spider.csv文件中。
 
