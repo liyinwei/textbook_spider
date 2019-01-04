@@ -17,14 +17,15 @@ class XXSXPepSpider(Spider):
 
     allowed_domains = ['shuxue9.com']
 
-    # start_urls = list(
-    #     map(lambda x: 'http://www.shuxue9.com/pep/xx%ss/ebook/1.html' % x, range(1, 7))
-    # )
-    #
-    # start_urls.extend(list(
-    #     map(lambda x: 'http://www.shuxue9.com/pep/xx%sx/ebook/1.html' % x, range(1, 7))
-    # ))
-    start_urls = ['http://www.shuxue9.com/pep/xx1s/ebook/1.html']
+    start_urls = list(
+        map(lambda x: 'http://www.shuxue9.com/pep/xx%ss/ebook/1.html' % x, range(1, 7))
+    )
+
+    start_urls.extend(list(
+        map(lambda x: 'http://www.shuxue9.com/pep/xx%sx/ebook/1.html' % x, range(1, 7))
+    ))
+
+    # start_urls = ['http://www.shuxue9.com/pep/xx1s/ebook/1.html']
 
     def parse(self, response):
         """
@@ -57,7 +58,7 @@ class XXSXPepSpider(Spider):
         item['spider'] = 'xxsx_pep_spider'
 
         # 年级
-        item['grade'] = int(re.search('xx(.+)(sx)', response.request.url).group(1))
+        item['grade'] = int(re.search('xx(.+)[sx]', response.request.url).group(1))
 
         # 章节
         item['chapter'] = response.xpath('//h1[@class="title"]/text()').extract_first()
