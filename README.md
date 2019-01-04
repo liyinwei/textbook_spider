@@ -1,6 +1,11 @@
 # Desc
 
-基于Python Scrapy 的人教版（新课程标准）小学语文课件爬虫。
+基于Python Scrapy 的课件爬虫，包括：
+- 人教版
+  - 语文
+    - 小学
+  - 数学
+    - 小学
 
 # Prerequisites
 

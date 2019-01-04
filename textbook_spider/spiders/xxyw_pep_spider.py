@@ -4,31 +4,28 @@
 @Time: 2018/12/6 10:52 AM
 @Description: 人教版（新课程标准）小学语文课件爬虫
 """
-import logging
 import re
 
 from scrapy import Request, Spider
 
+from common.logger import logger
 from textbook_spider.items import TextbookSpiderItem
 
-logging.basicConfig(filename='spider.log', filemode='w', level=logging.DEBUG,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
 
-
-class TextbookSpider(Spider):
-    name = "textbook_spider"
+class XXYWPepSpider(Spider):
+    name = "xxyw_pep_spider"
 
     allowed_domains = ['newxue.com']
 
-    start_urls = list(
-        map(lambda x: 'http://www.newxue.com/yuwen/rjkb%sa' % x, range(1, 7))
-    )
+    # start_urls = list(
+    #     map(lambda x: 'http://www.newxue.com/yuwen/rjkb%sa' % x, range(1, 7))
+    # )
+    #
+    # start_urls.extend(list(
+    #     map(lambda x: 'http://www.newxue.com/yuwen/rjkb%sb' % x, range(1, 7))
+    # ))
 
-    start_urls.extend(list(
-        map(lambda x: 'http://www.newxue.com/yuwen/rjkb%sb' % x, range(1, 7))
-    ))
-
-    # start_urls = ['http://www.newxue.com/yuwen/rjkb1a']
+    start_urls = ['http://www.newxue.com/yuwen/rjkb1a']
 
     def parse(self, response):
         """
@@ -38,6 +35,8 @@ class TextbookSpider(Spider):
         """
         for sel in response.xpath('//div[@class="ywlblt" or @class="ywlbrt"]/p/a'):
             item = TextbookSpiderItem()
+            # spider
+            item['spider'] = 'xxyw_pep_spider'
             # 年级
             item['grade'] = response.request.url[-3]
             # 章节
@@ -77,10 +76,11 @@ class TextbookSpider(Spider):
                 item['context'] = None
                 item['image_paths'] = None
                 item['image_urls'] = None
-                logging.info('no source found, url: %s' % response)
+                logger.info('no source found, url: %s' % response)
                 yield item
 
-    def parse_context_detail(self, response):
+    @staticmethod
+    def parse_context_detail(response):
         """
         正文页
         :param response:
@@ -94,6 +94,6 @@ class TextbookSpider(Spider):
         elif item['source'] == 2:
             # 无原文，则需抓取图片列表
             img_urls = response.xpath('//div[@class="jclj_text"]//img[contains(@src, "dianzikeben")]//@src').extract()
-
-            item['image_urls'] = ','.join(img_urls)
+            # item['image_urls'] = ','.join(list(map(lambda x: response.urljoin(x), img_urls)))
+            item['image_urls'] = list(map(lambda x: response.urljoin(x), img_urls))
         yield item

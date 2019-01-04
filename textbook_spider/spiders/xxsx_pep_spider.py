@@ -50,7 +50,8 @@ class XXSXPepSpider(Spider):
             next_page = response.urljoin(next_page)
             yield Request(url=next_page, meta={'item': next_item}, callback=self.parse)
 
-    def get_item(self, response):
+    @staticmethod
+    def get_item(response):
         item = TextbookSpiderItem()
         # spider
         item['spider'] = 'xxsx_pep_spider'

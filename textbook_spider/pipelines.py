@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import logging
+
 # Define your item pipelines here
 #
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
@@ -12,11 +12,9 @@ import pandas as pd
 from scrapy import Request
 from scrapy.pipelines.images import ImagesPipeline
 
-from textbook_spider import settings
+from common.logger import logger
 from common.ocr_util import ocr_client
-
-logging.basicConfig(filename='spider.log', filemode='w', level=logging.DEBUG,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+from textbook_spider import settings
 
 
 class TextbookSpiderPipeline(object):
@@ -27,15 +25,16 @@ class TextbookSpiderPipeline(object):
         self.data.append(vars(item).get('_values'))
 
     def close_spider(self, spider):
-        pd.DataFrame(self.data).to_csv('textbook_spider.csv')
+        pd.DataFrame(self.data).to_csv('./data/%s.csv' % spider.name)
 
 
 class TextbookImageSpiderPipeline(ImagesPipeline):
 
     def get_media_requests(self, item, info):
         if item.get('image_urls') is not None:
-            for url in item['image_urls'].split(','):
-                yield Request('http://www.newxue.com' + url)
+            # for url in item['image_urls'].split(','):
+            for url in item['image_urls']:
+                yield Request(url)
 
     def item_completed(self, results, item, info):
         """
@@ -50,13 +49,13 @@ class TextbookImageSpiderPipeline(ImagesPipeline):
             image_paths = [x['path'] for ok, x in results if ok]
             if not image_paths:
                 # 下载失败忽略该 Item 的后续处理
-                logging.info('download failed. %s' % results)
+                logger.info('download failed. %s' % results)
             else:
                 item_image_paths = []
                 # 将图片转移至子目录中
                 for image_path in image_paths:
                     images_store = settings.IMAGES_STORE
-                    newdir = os.path.join(images_store, 'full', item['chapter'])
+                    newdir = os.path.join(images_store, 'full', item['spider'], item['chapter'])
                     if not os.path.exists(newdir):
                         os.makedirs(newdir)
 
@@ -67,14 +66,14 @@ class TextbookImageSpiderPipeline(ImagesPipeline):
                         os.rename(src, dest)
                         item_image_paths.append(dest)
                     else:
-                        logging.error('img missed: %s' % src)
+                        logger.error('img missed: %s' % src)
                 item['image_paths'] = None if len(item_image_paths) == 0 else ','.join(item_image_paths)
                 # ocr 识别
-                item['context'] = self.ocr(item['image_paths'])
+                item['context'] = self.ocr(item['image_paths'], item['spider'])
 
         return item
 
-    def ocr(self, image_paths_str):
+    def ocr(self, image_paths_str, spider):
         if not image_paths_str:
             return None
 
@@ -90,12 +89,17 @@ class TextbookImageSpiderPipeline(ImagesPipeline):
         context = []
         for image_path in image_paths:
             response = ocr_client.basicGeneral(self.get_file_content(image_path))
-            page = re.sub('[^\u4e00-\u9fa5,，。:：\?？]', '',
-                          ''.join([x['words'] for x in response.get('words_result')]).replace('www.newxue.com', ''))
-            context.append(page)
+            context.append(''.join([x['words'] for x in response.get('words_result')]))
+        return self.clean_context(spider, ' '.join(context))
 
-        return ' '.join(context)
+    @staticmethod
+    def clean_context(spider, context):
+        if spider == 'xxyw_pep_spider':
+            return re.sub('[^\u4e00-\u9fa5,，。:：\?？]', '', context.replace('www.newxue.com', ''))
+        elif spider == 'xxsx_pep_spider':
+            return re.sub('[^\u4e00-\u9fa5,，。:：\?？]', '', context)
 
-    def get_file_content(self, file_path):
+    @staticmethod
+    def get_file_content(file_path):
         with open(file_path, 'rb') as fp:
             return fp.read()

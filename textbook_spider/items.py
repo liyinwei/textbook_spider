@@ -9,13 +9,16 @@ import scrapy
 
 
 class TextbookSpiderItem(scrapy.Item):
+    # spider
+    spider = scrapy.Field()
+
     # 年级
     grade = scrapy.Field()
 
     # 章节
     chapter = scrapy.Field()
 
-    # 课文来源:0-文本;1-图片;
+    # 课文来源:1-文本;2-图片;
     source = scrapy.Field()
 
     # 课文内容
