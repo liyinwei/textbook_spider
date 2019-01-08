@@ -1,9 +1,10 @@
 """
 @Author: liyinwei
 @E-mail: coridc@foxmail.com
-@Time: 2018/12/6 10:52 AM
-@Description: 人教版（新课程标准）小学语文课件爬虫
+@Time: 2019-01-07 09:59
+@Description: 人教版（PEP）小学英语课件爬虫
 """
+
 import re
 
 from scrapy import Request, Spider
@@ -12,20 +13,20 @@ from common.logger import logger
 from textbook_spider.items import TextbookSpiderItem
 
 
-class XXYWPepSpider(Spider):
-    name = "xxyw_pep_spider"
+class XXYYPepSpider(Spider):
+    name = "xxyy_pep_spider"
 
     allowed_domains = ['newxue.com']
 
-    start_urls = list(
-        map(lambda x: 'http://www.newxue.com/yuwen/rjkb%sa' % x, range(1, 7))
-    )
+    # start_urls = list(
+    #     map(lambda x: 'http://www.newxue.com/yuwen/rjkb%sa' % x, range(1, 7))
+    # )
+    #
+    # start_urls.extend(list(
+    #     map(lambda x: 'http://www.newxue.com/yuwen/rjkb%sb' % x, range(1, 7))
+    # ))
 
-    start_urls.extend(list(
-        map(lambda x: 'http://www.newxue.com/yuwen/rjkb%sb' % x, range(1, 7))
-    ))
-
-    # start_urls = ['http://www.newxue.com/yuwen/rjkb1a']
+    start_urls = ['http://www.newxue.com/yuwen/rjkb1a']
 
     def parse(self, response):
         """
