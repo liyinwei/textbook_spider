@@ -8,7 +8,10 @@
 from scrapy import cmdline
 
 # 小学语文 - 人教版
-cmdline.execute("scrapy crawl xxyw_pep_spider".split())
+# cmdline.execute("scrapy crawl xxyw_pep_spider".split())
 
 # 小学数学 - 人教版
 # cmdline.execute("scrapy crawl xxsx_pep_spider".split())
+
+# 小学英语 - 人教版(PEP)
+cmdline.execute("scrapy crawl xxyy_pep_spider".split())

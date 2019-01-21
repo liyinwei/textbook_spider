@@ -5,28 +5,25 @@
 @Description: 人教版（PEP）小学英语课件爬虫
 """
 
-import re
-
 from scrapy import Request, Spider
 
-from common.logger import logger
 from textbook_spider.items import TextbookSpiderItem
 
 
 class XXYYPepSpider(Spider):
     name = "xxyy_pep_spider"
 
-    allowed_domains = ['newxue.com']
+    allowed_domains = ['wsbedu.com']
 
-    # start_urls = list(
-    #     map(lambda x: 'http://www.newxue.com/yuwen/rjkb%sa' % x, range(1, 7))
-    # )
-    #
-    # start_urls.extend(list(
-    #     map(lambda x: 'http://www.newxue.com/yuwen/rjkb%sb' % x, range(1, 7))
-    # ))
+    start_urls = list(
+        map(lambda x: 'http://www.wsbedu.com/xiaox/rje%s1kb.asp' % x, range(3, 7))
+    )
 
-    start_urls = ['http://www.newxue.com/yuwen/rjkb1a']
+    start_urls.extend(list(
+        map(lambda x: 'http://www.wsbedu.com/xiaox/rje%s2kb.asp' % x, range(3, 7))
+    ))
+
+    # start_urls = ['http://www.wsbedu.com/xiaox/rje31kb.asp']
 
     def parse(self, response):
         """
@@ -34,67 +31,69 @@ class XXYYPepSpider(Spider):
         :param response:
         :return:
         """
-        for sel in response.xpath('//div[@class="ywlblt" or @class="ywlbrt"]/p/a'):
+        for sel in response.xpath('//div[@class="main_left2"]/table//tr[position()>1]//a'):
             item = TextbookSpiderItem()
             # spider
-            item['spider'] = 'xxyw_pep_spider'
+            item['spider'] = 'xxyy_pep_spider'
             # 年级
-            item['grade'] = response.request.url[-3]
+            item['grade'] = response.request.url[-8]
             # 章节
-            item['chapter'] = sel.xpath('text()').extract()[0].strip()
+            item['chapter'] = sel.xpath('text()').extract_first().strip().replace('电子课本', '')
+            # 课文来源:1-文本;2-图片;
+            item['source'] = 2
+            # url
+            item['url'] = []
+            # image_urls
+            item['image_urls'] = []
+
+            url = response.urljoin(sel.xpath('@href').extract_first())
             # 正文
-            yield Request(url=sel.xpath('@href').extract()[0], meta={'item': item}, callback=self.parse_context)
+            yield Request(url=url, meta={'item': item}, callback=self.parse_context)
 
     def parse_context(self, response):
         """
-        跳转页
+        正文页-分页
         :param response:
         :return:
         """
         item = response.meta['item']
-        # 课文原文
-        sel = response.xpath('//a[contains(text(), "课文原文")]')
+        pages = response.xpath('//div[@class="STYLE8"]//a[position()>1]')
+        # 单个章节多页的处理
+        for index, sel in enumerate(pages):
+            url = response.urljoin(sel.xpath('@href').extract_first())
+            # url
+            item['url'].append(url)
 
-        if len(sel) > 0:
-            # 有原文，则直接读取文本
-            item['source'] = 1
-            item['url'] = sel[0].xpath('@href').extract()[0]
-            item['image_paths'] = None
-            item['image_urls'] = None
-            yield Request(url=item['url'], meta={'item': item},
-                          callback=self.parse_context_detail)
-        else:
-            # 无原文，则需抓取图片列表
-            item['source'] = 2
-            sel = response.xpath('//a[contains(text(), "电子课本")]')
-            if len(sel) > 0:
-                item['url'] = sel[0].xpath('@href').extract()[0]
-                yield Request(url=item['url'], meta={'item': item},
-                              callback=self.parse_context_detail)
-            else:
-                item['source'] = 0
-                item['url'] = None
-                item['context'] = None
-                item['image_paths'] = None
-                item['image_urls'] = None
-                logger.info('no source found, url: %s' % response)
-                yield item
+        yield Request(
+            url=item['url'][0],
+            meta={
+                'item': item,
+                'page_no': 0
+            },
+            callback=self.parse_context_detail
+        )
 
-    @staticmethod
-    def parse_context_detail(response):
+    def parse_context_detail(self, response):
         """
         正文页
         :param response:
         :return:
         """
         item = response.meta['item']
-        if item['source'] == 1:
-            # 有原文，直接读取文本（过滤换行及<p></p>等标签）
-            item['context'] = re.sub(r'\s+', '',
-                                     response.xpath('//div[@class="jclj_text"]')[0].xpath('string(.)').extract()[0])
-        elif item['source'] == 2:
-            # 无原文，则需抓取图片列表
-            img_urls = response.xpath('//div[@class="jclj_text"]//img[contains(@src, "dianzikeben")]//@src').extract()
-            # item['image_urls'] = ','.join(list(map(lambda x: response.urljoin(x), img_urls)))
-            item['image_urls'] = list(map(lambda x: response.urljoin(x), img_urls))
-        yield item
+        page_no = int(response.meta['page_no'])
+
+        img_urls = response.xpath('//div[@class="main_left2"]/img/@src').extract()
+        img_urls = list(response.urljoin(x) for x in img_urls)
+        item['image_urls'].extend(img_urls)
+
+        if page_no == len(item['url']) - 1:
+            yield item
+        else:
+            page_no += 1
+            yield Request(
+                url=item['url'][page_no],
+                meta={
+                    'item': item, 'page_no': page_no
+                },
+                callback=self.parse_context_detail
+            )

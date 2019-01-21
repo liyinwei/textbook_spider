@@ -83,12 +83,12 @@ class TextbookImageSpiderPipeline(ImagesPipeline):
         options = {}
         options["language_type"] = "CHN_ENG"
         options["detect_direction"] = "false"
-        options["detect_language"] = "false"
+        options["detect_language"] = "true"
         options["probability"] = "false"
 
         context = []
         for image_path in image_paths:
-            response = ocr_client.basicGeneral(self.get_file_content(image_path))
+            response = ocr_client.basicGeneral(self.get_file_content(image_path), options)
             context.append(''.join([x['words'] for x in response.get('words_result')]))
         return self.clean_context(spider, ' '.join(context))
 
@@ -98,6 +98,9 @@ class TextbookImageSpiderPipeline(ImagesPipeline):
             return re.sub('[^\u4e00-\u9fa5,，。:：\?？]', '', context.replace('www.newxue.com', ''))
         elif spider == 'xxsx_pep_spider':
             return re.sub('[^\u4e00-\u9fa5,，。:：\?？]', '', context)
+        elif spider == 'xxyy_pep_spider':
+            # return re.sub('[^a-zA-Z,\.\s\']', '', context)
+            return context
 
     @staticmethod
     def get_file_content(file_path):
